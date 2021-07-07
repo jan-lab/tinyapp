@@ -30,18 +30,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// const urlDatabase = {
+// };
+
 
 //home page
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-
 //json of database
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
@@ -113,7 +114,8 @@ app.post('/login', (req,res) => {
 
 app.post('/logout', (req,res) => {
   res.clearCookie('username');
-  res.redirect('/urls');
+  console.log(req.cookies);
+  return res.redirect('/urls');
 });
 
 app.listen(PORT, () => {
