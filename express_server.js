@@ -33,6 +33,27 @@ const urlDatabase = {
 // const urlDatabase = {
 // };
 
+const users = {
+  'abc': {
+    id: 'abc',
+    email: 'jstamos@mail.com',
+    password: '1234'
+  }
+};
+
+const findUserByEmail = (email) => {
+  // if we find a user, return the user
+  // if not, return null
+  for (const userId in users) {
+    const user = users[userId];
+    if (user.email === email) {
+      return user;
+    }
+  }
+
+  return null;
+};
+
 
 //home page
 app.get("/", (req, res) => {
@@ -117,6 +138,13 @@ app.post('/logout', (req,res) => {
   console.log(req.cookies);
   return res.redirect('/urls');
 });
+
+//GET /register
+app.get('/register', (req,res) => {
+  res.render('register');
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
