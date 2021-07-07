@@ -10,6 +10,9 @@ app.use(morgan('dev'));
 const bodyParser = require("body-parser");
 app.use(express.urlencoded({extended: true}));
 
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 
 const generateRandomString = () => {
   let result           = '';
@@ -33,30 +36,35 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+
 //json of database
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+
 //Browse GET /urls
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase }; //Q. how does it work here when urls: urlDatabase is entered?? why is it not just {urlDatabase}?
+  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }; //urls is the variable name we gave
+
   res.render("urls_index", templateVars);   //renders a template named urls_index.
 });
 
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {username: req.cookies['username']};
+  res.render("urls_new", templateVars);
 });
 
 //Read GET /urls/:shortURL
 app.get("/urls/:shortURL", (req, res) => {
   const urlID = req.params.shortURL;
-  const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL] }; //1:31:03
+  const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL], username: req.cookies['username']}; //1:31:03
   res.render("urls_show", templateVars);
 });
 
@@ -93,6 +101,18 @@ app.post('/urls/:shortURL', (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const id = req.params.shortURL;
   delete urlDatabase[id];
+  res.redirect('/urls');
+});
+
+
+app.post('/login', (req,res) => {
+  res.cookie('username', req.body.username);
+  console.log(res.cookie.username);
+  res.redirect('/urls');
+});
+
+app.post('/logout', (req,res) => {
+  res.clearCookie('username');
   res.redirect('/urls');
 });
 
