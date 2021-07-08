@@ -34,37 +34,44 @@ const urlDatabase = {
 // };
 
 const users = {
-  'abc': {
-    id: 'abc',
-    email: 'jstamos@mail.com',
-    password: '1234'
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
   }
 };
 
 const findUserByEmail = (email) => {
   // if we find a user, return the user
   // if not, return null
+  console.log(email);
+  console.log(users);
   for (const userId in users) {
     const user = users[userId];
     if (user.email === email) {
       return user;
     }
   }
-
   return null;
 };
 
 
-//home page
+//GET / home page
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-//json of database
+//GET /urls.json //json of database
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//GET /hello
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
@@ -72,27 +79,69 @@ app.get("/hello", (req, res) => {
 
 //Browse GET /urls
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies['username'] }; //urls is the variable name we gave
+  let user;
+  for (let userKey in users) {
+    if (userKey === req.cookies['user_id']) {
+      user = users[userKey];
+    }
+  }
+  const templateVars = { urls: urlDatabase, user }; //urls is the variable name we gave
 
   res.render("urls_index", templateVars);   //renders a template named urls_index.
 });
 
-
+//GET /urls/new
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies['username']};
+  let user;
+  for (let userKey in users) {
+    if (userKey === req.cookies['user_id']) {
+      user = users[userKey];
+    }
+  }
+  const templateVars = {user};
   res.render("urls_new", templateVars);
 });
 
 //Read GET /urls/:shortURL
 app.get("/urls/:shortURL", (req, res) => {
   const urlID = req.params.shortURL;
-  const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL], username: req.cookies['username']}; //1:31:03
+  let user;
+  for (let userKey in users) {
+    if (userKey === req.cookies['user_id']) {
+      user = users[userKey];
+    }
+  }
+  const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL], user}; //1:31:03
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
+});
+
+//GET /register
+app.get('/register', (req,res) => {
+  let user;
+  for (let userKey in users) {
+    if (userKey === req.cookies['user_id']) {
+      user = users[userKey];
+    }
+  }
+  const templateVars = {user};
+  res.render('register', templateVars);
+});
+
+//GET /login
+app.get('/login', (req,res) => {
+  let user;
+  for (let userKey in users) {
+    if (userKey === req.cookies['user_id']) {
+      user = users[userKey];
+    }
+  }
+  const templateVars = {user};
+  res.render('login', templateVars);
 });
 
 //Add Post /urls
@@ -105,6 +154,42 @@ app.post("/urls", (req, res) => {
   //console.log(urlDatabase);
   res.redirect(`/urls/${id}`);
 });
+
+//POST /register
+app.post('/register', (req,res) => {
+  // add the new user to our users object
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+
+
+  // check if they gave us anything
+  if (!email || !password) {
+    return res.status(400).send('email and password cannot be blank');
+  }
+  // find out if email is already in use
+  const user = findUserByEmail(email);
+  if (user) {
+    return res.status(400).send('that email address is already in use');
+  }
+
+  users[id] = {
+    id,
+    email,
+    password
+  };
+  
+  //set a user_id cookie containing the user's newly generated ID.
+  res.cookie('user_id', id);
+
+  console.log(users);
+
+  return res.redirect('/urls');
+  
+});
+
+
 
 //Edit Post /urls/:shortURL
 app.post('/urls/:shortURL', (req, res) => {
@@ -126,22 +211,38 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect('/urls');
 });
 
-
+//POST /login
 app.post('/login', (req,res) => {
-  res.cookie('username', req.body.username);
-  console.log(res.cookie.username);
+  
+  const email = req.body.email;
+  //const password = req.body.password;
+
+  //res.cookie('user_id', users[id].id);
+
+  // check if they gave us anything
+  if (!email) {
+    return res.status(403).send('email not found');
+  }
+  // find out if email is already in use
+  const user = findUserByEmail(email);
+  if (user) {
+    if (user.password !== req.body.password) { //shouldn't save email and password to cookie
+      return res.status(403).send('incorrect password');
+    }
+    console.log(user);
+    res.cookie('user_id', user.id);
+    res.redirect('/urls');
+    //req.cookies.user_id = user.id;
+  };
+
   res.redirect('/urls');
 });
 
+//POST /logout
 app.post('/logout', (req,res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   console.log(req.cookies);
   return res.redirect('/urls');
-});
-
-//GET /register
-app.get('/register', (req,res) => {
-  res.render('register');
 });
 
 

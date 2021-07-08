@@ -6,25 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-  <title>Register</title>
+  <title>Login</title>
 </head>
 <body>
   <%- include('partials/_header') %>
   <main style="margin: 1em;">
-    <h3>Create Account</h3>
-
-   
+    <h3>Login</h3>
   
-  <form method="POST" action="/register">
+  <form method="POST" action="/login">
     <label>Email Address:</label>
-    <input name="email" type="email" placeholder="Enter email" />
+    <input name="email" type="email" placeholder="Enter email"/>
     <br/>
 
     <label>Password:</label>
     <input name="password" type="password" placeholder="Password"/>
     <br/>
     <br/>
-    <button type="submit">Register</button>
+    <button type="submit">Login</button>
   </form>
         <!-- Bootstrap JS -->
         <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
