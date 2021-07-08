@@ -26,11 +26,18 @@ const generateRandomString = () => {
 
 //in-memory database
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
+  }
 };
-
 // const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
 // };
 
 const users = {
@@ -117,13 +124,20 @@ app.get("/urls/:shortURL", (req, res) => {
       user = users[userKey];
     }
   }
-  const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL], user}; //1:31:03
+  const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL].longURL, user}; //1:31:03
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  for (let key in urlDatabase) {
+    // console.log(key);
+    // console.log(req.params.shortURL);
+    if (key === req.params.shortURL) {
+      const longURL = urlDatabase[req.params.shortURL].longURL;
+      return res.redirect(longURL);
+    }
+  }
+  res.status('404').send('URL does not exist');
 });
 
 //GET /register
@@ -153,10 +167,12 @@ app.get('/login', (req,res) => {
 //Add Post /urls
 app.post("/urls", (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
-  const newURL = req.body;
+  //const newURL = req.body;
   const id = generateRandomString();
-  //urlDatabase[id] = req.body.longURL;
-  urlDatabase[id] = newURL.longURL;
+  urlDatabase[id] = {};
+  //console.log(req.body) //{ longURL: 'http://expressjs.com' }
+  //console.log(req.body.longURL) //http://expressjs.com
+  urlDatabase[id].longURL = req.body.longURL;
   //console.log(urlDatabase);
   res.redirect(`/urls/${id}`);
 });
@@ -201,9 +217,11 @@ app.post('/register', (req,res) => {
 app.post('/urls/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
   //grab the body of the request
+  //onsole.log(req.body); //{ newURL: 'http://www.google.ca' }
+  //console.log(req.body.newURL); //http://www.google.ca
   const newURL = req.body.newURL;
   //console.log(body); //if you see req.body is undefined, you don't have the body-parser set up.
-  urlDatabase[shortURL] = newURL;
+  urlDatabase[shortURL].longURL = newURL;
   //once we are done with whatever it is, we are going back to the homepage.
   res.redirect('/urls');
 });
