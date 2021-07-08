@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -56,21 +57,21 @@ const urlDatabase = {
 };
 
 const users = {
-  "apple": {
-    id: "apple",
-    email: "a@a.com",
-    password: "1234"
-  },
-  "green": {
-    id: "green",
-    email: "b@b.com",
-    password: "1234"
-  },
-  "stone": {
-    id: "stone",
-    email: "c@c.com",
-    password: "1234"
-  }
+  // "apple": {
+  //   id: "apple",
+  //   email: "a@a.com",
+  //   password: "1234"
+  // },
+  // "green": {
+  //   id: "green",
+  //   email: "b@b.com",
+  //   password: "1234"
+  // },
+  // "stone": {
+  //   id: "stone",
+  //   email: "c@c.com",
+  //   password: "1234"
+  // }
 };
 
 //messages to use
@@ -227,17 +228,24 @@ app.post('/register', (req,res) => {
     return res.status(400).send('that email address is already in use');
   }
 
-  users[id] = {
-    id,
-    email,
-    password
-  };
-  
-  //set a user_id cookie containing the user's newly generated ID.
-  res.cookie('user_id', id);
-  //console.log(users);
+  // hash the user's password
+  bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.hash(password, salt, (err, hash) => {
+      users[id] = {
+        id,
+        email,
+        password: hash
+      };
+      
+      //console.log(password)
 
-  return res.redirect('/urls');
+      //set a user_id cookie containing the user's newly generated ID.
+      res.cookie('user_id', id);
+      console.log(users);
+      return res.redirect('/urls');
+
+    });
+  });
 });
 
 
@@ -252,17 +260,29 @@ app.post('/login', (req,res) => {
   }
   // find out if email is already in use
   const user = findUserByEmail(email);
+  // console.log(password); //1234
+  // console.log(user.password); //hashed
   if (!user) {
     return res.status(403).send(`Email Not Found - <html><body>You can create an account <a href='/register'><b>here</b></a>.</body></html>\n`);
   }
 
-  if (user.password !== req.body.password) { //shouldn't save email and password to cookie
-    return res.status(403).send('Incorrect Password');
-  }
-  //console.log(user);
-  res.cookie('user_id', user.id);
+  // we found the user! now we need to compare the password //shouldn't have saved email and password to cookie
+  bcrypt.compare(password, user.password, (err, result) => {
+    //console.log(result) //true
+    // console.log(password); //1234
+    // console.log(user.password); //hashed
+    
+    if (!result) {
+      return res.status(403).send('Incorrect Password');
+    }
 
-  res.redirect('/urls');
+    // happy path! at last
+    res.cookie('user_id', user.id);
+    //req.session.userId = user.id;
+
+    // redirect the user
+    res.redirect('/urls');
+  });
 });
 
 
