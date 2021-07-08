@@ -213,11 +213,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //POST /login
 app.post('/login', (req,res) => {
-  
   const email = req.body.email;
-  //const password = req.body.password;
-
-  //res.cookie('user_id', users[id].id);
 
   // check if they gave us anything
   if (!email) {
@@ -233,7 +229,7 @@ app.post('/login', (req,res) => {
     res.cookie('user_id', user.id);
     res.redirect('/urls');
     //req.cookies.user_id = user.id;
-  };
+  }
 
   res.redirect('/urls');
 });
