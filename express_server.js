@@ -93,12 +93,18 @@ app.get("/urls", (req, res) => {
 //GET /urls/new
 app.get("/urls/new", (req, res) => {
   let user;
+
+  if (!req.cookies['user_id']) {
+    return res.redirect('/login');
+  }
+  
   for (let userKey in users) {
     if (userKey === req.cookies['user_id']) {
       user = users[userKey];
     }
   }
   const templateVars = {user};
+  
   res.render("urls_new", templateVars);
 });
 
