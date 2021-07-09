@@ -1,3 +1,5 @@
+//Final Version
+
 //returns a user of an email if in the users database
 const getUserByEmail = (email, usersDatabase) => {
   
