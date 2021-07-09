@@ -2,6 +2,8 @@ const cookieSession = require('cookie-session');
 const express = require("express");
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
+const { getUserByEmail } = require('./helpers.js');
+//const { getUserByEmail } = require('./helpers.js');
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -61,7 +63,7 @@ const users = {
   // "apple": {
   //   id: "apple",
   //   email: "a@a.com",
-  //   password: "1234"
+  //   password: "1234" //because this cannot be compared with hashed password and then login would not work, I've commented out exisgint data.
   // },
   // "green": {
   //   id: "green",
@@ -72,23 +74,24 @@ const users = {
   //   id: "stone",
   //   email: "c@c.com",
   //   password: "1234"
-  // }
+  //}
 };
 
 //messages to use
-const tellsVisitorToLogin = "<html><body>Please log in <a href='/login'><b>here</b></a></body></html>\n";
-const informsRestriction = "<html><body>The URL does not belong to you. Click <a href='/urls'><b>here</b></a> for the list of your URLs</body></html>\n";
+const tellsVisitorToLogin = "Please log in <a href='/login'><b>here</b></a>";
+const informsRestriction = "The URL does not belong to you. Click <a href='/urls'><b>here</b></a> for the list of your URLs";
 
-//returns a user of an email if in the users database
-const findUserByEmail = (email) => {
-  for (const userId in users) {
-    const user = users[userId];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-};
+// //returns a user of an email if in the users database
+// const findUserByEmail = (email) => {
+//   for (const userId in users) {
+//     const user = users[userId];
+//     if (user.email === email) {
+//       return user;
+//     }
+//   }
+//   return null;
+// };
+
 
 
 //GET /
@@ -114,19 +117,27 @@ app.get("/", (req, res) => {
 
 //GET /urls
 app.get("/urls", (req, res) => {
-
   //if (!req.session.user_id) {
   if (!req.session.user_id) {
     return res.send(tellsVisitorToLogin);
     //return res.redirect('/login');
   }
-
+    
+  console.log(req.session);
   let user;
-  for (let key in users) {
-    //if (key === req.session.user_id) {
-    if (key === req.session.user_id) {
-      user = users[key];
-    }
+  // for (let key in users) {
+  //   if (key === req.session.user_id) {
+  //     user = users[key];
+  //   }
+  // }
+
+  if (req.session.user_id) {
+    //const email = req.body.email;
+    const email = req.session.email;
+    //console.log(req.body.email); //undefined
+    user = getUserByEmail(email, users);
+    //console.log(user); //null
+    //console.log(users); // correctly showing updated database
   }
 
   const urls = urlsForUser(req.session.user_id);
@@ -146,12 +157,18 @@ app.get("/urls/new", (req, res) => {
     return res.redirect('/login');
   }
   
-  for (let key in users) {
-    //if (key === req.session.user_id) {
-    if (key === req.session.user_id) {
-      user = users[key];
-    }
+  // for (let key in users) {
+  //   //if (key === req.session.user_id) {
+  //   if (key === req.session.user_id) {
+  //     user = users[key];
+  //   }
+  // }
+
+  if (req.session.user_id) {
+    const email = req.session.email;
+    user = getUserByEmail(email, users);
   }
+
   const templateVars = {user};
   
   res.render("urls_new", templateVars);
@@ -171,10 +188,14 @@ app.get("/urls/:shortURL", (req, res) => {
   const urlID = req.params.shortURL;
 
   let user;
-  for (let userKey in users) {
-    if (userKey === req.session.user_id) {
-      user = users[userKey];
-    }
+  // for (let userKey in users) {
+  //   if (userKey === req.session.user_id) {
+  //     user = users[userKey];
+  //   }
+  // }
+  if (req.session.user_id) {
+    const email = req.session.email;
+    user = getUserByEmail(email, users);
   }
   const templateVars = { shortURL: urlID, longURL: urlDatabase[req.params.shortURL].longURL, user};
   res.render("urls_show", templateVars);
@@ -193,25 +214,53 @@ app.get("/u/:shortURL", (req, res) => {
   res.status('404').send('URL does not exist');
 });
 
+// //GET /register //working version prior to removing users db
+// app.get('/register', (req,res) => {
+//   let user;
+//   for (let userKey in users) {
+//     if (userKey === req.session.user_id) {
+//       user = users[userKey];
+//     }
+//   }
+//   const templateVars = {user};
+//   res.render('register', templateVars);
+// });
+
+// //returns a user of an email if in the users database
+// const findUserByEmail = (email, usersDatabase) => {
+//   const users = usersDatabase;
+//   for (const userId in users) {
+//     const user = users[userId];
+//     if (user.email === email) {
+//       return user;
+//     }
+//   }
+//   return null;
+// };
+
 //GET /register
 app.get('/register', (req,res) => {
   let user;
-  for (let userKey in users) {
-    if (userKey === req.session.user_id) {
-      user = users[userKey];
-    }
+  if (req.session.user_id) {
+    // const email = req.session.email;
+    // user = getUserByEmail(email, users);
+    return res.redirect('urls');
   }
   const templateVars = {user};
-  res.render('register', templateVars);
+  return res.render('register', templateVars);
 });
 
 //GET /login
 app.get('/login', (req,res) => {
   let user;
-  for (let userKey in users) {
-    if (userKey === req.session.user_id) {
-      user = users[userKey];
-    }
+  // for (let userKey in users) {
+  //   if (userKey === req.session.user_id) {
+  //     user = users[userKey];
+  //   }
+  // }
+  if (req.session.user_id) {
+    const email = req.session.email;
+    user = getUserByEmail(email, users);
   }
   const templateVars = {user};
   res.render('login', templateVars);
@@ -227,17 +276,18 @@ app.post('/register', (req,res) => {
 
   // check if both email and password have been provided
   if (!email || !password) {
-    return res.status(400).send('email and password cannot be blank');
+    return res.status(400).send('Email and password cannot be blank. Please <a href="/register">try again</a>.');
   }
   // find out if email is already in use
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email, users);
   if (user) {
-    return res.status(400).send('that email address is already in use');
+    return res.status(400).send('The email address is already in use. Please <a href="/register">try again</a>.');
   }
 
   // hash the user's password
   bcrypt.genSalt(10, (err, salt) => {
     bcrypt.hash(password, salt, (err, hash) => {
+      //const users = {};
       users[id] = {
         id,
         email,
@@ -249,7 +299,9 @@ app.post('/register', (req,res) => {
       //set a user_id cookie containing the user's newly generated ID.
       //res.cookie('user_id', id);
       req.session.user_id = id;
-      console.log(users);
+      req.session.email = req.body.email;
+      console.log('POST /login',req.body.email);
+      //console.log(users); //correctly stored
       return res.redirect('/urls');
 
     });
@@ -267,7 +319,7 @@ app.post('/login', (req,res) => {
     return res.status(403).send('Email and password cannot be blank');
   }
   // find out if email is already in use
-  const user = findUserByEmail(email);
+  const user = getUserByEmail(email, users);
   // console.log(password); //1234
   // console.log(user.password); //hashed
   if (!user) {
@@ -288,6 +340,8 @@ app.post('/login', (req,res) => {
     //res.cookie('user_id', user.id);
     //req.session.userId = user.id;
     req.session.user_id = user.id;
+    req.session.email = user.email;
+    //console.log('POST /login',user.email);
 
     // redirect the user
     res.redirect('/urls');
